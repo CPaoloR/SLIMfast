@@ -1,0 +1,51 @@
+SOFTWARE LICENSE FOR RESEARCH USE
+N° 07615A10
+
+Article 1 – PRELIMINARY
+By completing this form, downloading and using the Software (as defined below), the Beneficiary (as defined below) accepts all the following terms, with no restriction.
+
+Article 2 – DEFINITIONS
+“Beneficiary” shall mean the beneficiary of the present license, who has completed the present form.
+“Interlocutor” shall mean Mr. Didier Marguet from the Centre d’Immunologie de Marseille Luminy (Université de la Méditerranée ; Institut National de la Santé et de la Recherche Médicale, Unité Mixte de Recherche 631 ; Centre National de la Recherche Scientifique, Unité Mixte de Recherche 6102, Parc scientifique de Luminy, Case 906, F-13288 Marseille CEDEX 09 France)
+“Notice” means the user’s short notice provided for the Software in digital form (pdf).
+“Software” shall mean the Multiple-Target Tracing (MTT) algorithm developed by Arnauld Sergé, Nicolas Bertaux, Hervé Rigneault and Didier Marguet, as described in Nature Methods 2008. The Software is accessible under source code, free of charge for academics and non profit use.
+
+Article 3 – OBJECT AND SCOPE
+3.1     A non-exclusive, royalty-free, non-transferable license for internal research use only is hereby granted to the Beneficiary to install and use the Software on an appropriate computer system or a system located on the Beneficiary’s premises and for which the Beneficiary has authorized access.
+3.2     INSERM, CNRS, Ecole Centrale Marseille, Université de la Méditerranée (hereinafter the “Co-owners”) shall retain ownership of the Software delivered to the Beneficiary pursuant to article 4 below.
+3.3     By the present agreement, the Beneficiary hereby acknowledges that it has been granted the right to use the Software on all computers located on its premises. In particular the Beneficiary can place the Software on an internal network, but not on an external network.
+3.4     The Software is protected by the Code de la propriété intellectuelle in France and by international agreements concerning copyrights elsewhere.
+
+Article 4 – DELIVERY OF THE SOFTWARE AND THE USER’S NOTICE
+4.1     After having duly completed the present form, the Beneficiary shall receive an email with a single use download link. This link will allow the Beneficiary to download a compressed file which includes the Software in its source code form and the related Notice.
+4.2     In case of problems with downloading the compressed file, the Beneficiary should contact the Interlocutor at the following address: marguet@ciml.univ-mrs.fr
+
+Article 5 – UTILIZATION RIGHTS
+5.1     The Beneficiary hereby acknowledges that its rights to use the Software are limited to those concerning intellectual property rights granted hereunder:
+a)   The right to copy the Software on computers located on Beneficiary’s premises for downloading, display, execution and storage of the Software only;
+b)   The right to correct errors in the Software subject to providing the Interlocutor with said corrections in a timely manner at the e-mail address mentioned in article 4.
+The above mentioned rights are granted for internal research use throughout the term of said rights.
+5.2     The Beneficiary hereby acknowledges that the present agreement only grants rights to use the Software for internal research purposes. Consequently, the Beneficiary shall acquire rights for any utilization and/or exploitation of any software implemented in any program or group of programs, that includes the Software.
+5.3     The Beneficiary shall not disclose the Software as delivered or any modifications or derivative works based on the Software in any form whatsoever to third parties without prior written approval from the Co-owners.
+5.4     Should the Beneficiary receive a request to provide all or any portion of the Software to any third party, she/he will not do so, she/he will forward said request to the Interlocutor in writing.
+5.5     The Beneficiary hereby agrees that she/he may only copy the Notice to have a printed hard copy or for direct use on a computer.
+5.6     The Interlocutor shall use the Beneficiary email address to inform her/him with any improvements or modifications of the Software.
+
+Article 6 – WARRANTIES
+6.1     The Beneficiary acknowledges that she/he has received no guarantee of any kind for the Software. In particular, no guarantee is provided to the Beneficiary concerning the use or adaptation of the Software for any particular purpose and she/he agrees not to call on the Co-owners and/or the Interlocutor in warranty in case of damages or prejudice of any kind caused by the Software.
+6.2     The Beneficiary hereby agrees that she/he shall exploit the Software at her/his own risk and peril.
+6.3     The Software is only provided in an internal research purposes use.
+
+Article 7 – INFRINGEMENT
+The Beneficiary shall inform the Interlocutor of any infringement of the Software that she/he may learn of.
+The Beneficiary agrees not to file any actions of infringement against the Co-owners and/or the Interlocutor.
+
+Article 8 – TERM AND TERMINATION
+The present agreement shall take effect on the date the Beneficiary has completed and sent the present form, and shall remain in effect as long as the Software is legally protected; unless earlier termination in accordance with the following.
+The present authorization may be terminated by the Co-owners if the Beneficiary fails to perform the obligations provided in articles 3 and 5. This termination shall only take effect three (3) days after the Interlocutor has sent an email with acknowledgement of receipt to the Beneficiary.
+
+Article 9 – PUBLICATION
+The Beneficiary agrees that any public report or publications of results obtained with the Software will acknowledge the use of the Software by referring to the original work (“Sergé et al. Nature Methods 2008”).
+
+Article 10 – APPLICABLE LAW
+The present agreement is governed by French laws and the French courts shall have sole jurisdiction.

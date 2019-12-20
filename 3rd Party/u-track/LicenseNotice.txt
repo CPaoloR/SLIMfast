@@ -1,0 +1,4 @@
+<program>  <version>
+Copyright (C) <year>  <name of author>
+This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under certain conditions. For details go under the About menu and select Terms of Use
+
