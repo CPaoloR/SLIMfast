@@ -1,0 +1,183 @@
+[START DisplaySettings]
+DisplayStart="-inf"
+DisplayEnd="inf"
+DisplayWin="1"
+DisplayStep="1"
+WinMode="Cumulative"
+RenderMode="Normal"
+IsCumulative="0"
+UseFilter="0"
+FilterModel="Hypothesis Map"
+UseCalRawImage="0"
+ActExp="5"
+KernelModel="Fixed Radius"
+RadWeight="1"
+HideLapsedTraj="0"
+TrajUserColor="[1 1 1]"
+TrajColorCode="Random"
+TrajLineWidth="1"
+TrajLineStyle="-"
+[End DisplaySettings]
+
+[START ContrastSettings]
+LowSat="50"
+HighSat="0.5"
+FixedSat="1"
+[End ContrastSettings]
+
+[START Grid]
+UseGrid="0"
+GridMode="Uniform Hexagonal"
+GridLineColor="[0 1 0]"
+GridLineWidth="1"
+GridRectWidth="1"
+GridRectHeight="1"
+GridHexArea="1"
+[End Grid]
+
+[START Roi]
+FocusRoi="0"
+HighlightRoi="1"
+CropRoi="1"
+[End Roi]
+
+[START LineProfile]
+NumSegments="5"
+LineInterval="20"
+LateralInterval="20"
+NumLateralPnts="5"
+AvDirection="Orthogonal"
+InterpType="Linear"
+Weighting="Mean"
+SigmaWeight="10"
+[End LineProfile]
+
+[START UnitConvFac]
+Px2nm="107"
+Frame2msec="32"
+Count2photon="0.05"
+[End UnitConvFac]
+
+[START LocSettings]
+ErrRate="-6"
+WinX="9"
+WinY="9"
+NumDeflat="inf"
+MinInt="0"
+LocModel="Fixed"
+LowerBoundPSF="50"
+UpperBoundPSF="200"
+MaxIter="100"
+TermTol="-3"
+MaxPosRef="1.5"
+LocPar="0"
+nCores="all"
+LocLive="0"
+NA="1.45"
+EmWavelength="595"
+CorrFactor="1.2"
+Chromophor="User Supplied"
+UserEmWavelength="600"
+SrcDiameter="100"
+TypePSF="theoretical"
+UserRadiusPSF="1"
+[End LocSettings]
+
+[START CoLocSettings]
+UseFixedDist="0"
+DistThresh="50"
+ProbMiss="-3"
+InterMolDist="0"
+CoLocMode="inclusive"
+[End CoLocSettings]
+
+[START TrackSettings]
+Dim="1"
+ResLimit="1.3"
+LocDensWin="10"
+GapPenalty="1.5"
+InitMinSearchRad="0.5"
+InitMaxSearchRad="5"
+InitUseLocDens="0"
+MinCompoundLength="3"
+MinSearchRad="1"
+MaxSearchRad="10"
+UseLocDens="0"
+FreeScaleFast="0.5"
+FreeScaleSlow="0.01"
+FreeScaleTrans="3"
+UseGapClosure="1"
+MaxGap="5"
+UseMergeSplit="0"
+MinAmpRatio="0.5"
+MaxAmpRatio="1.5"      
+UseLinModel="0"
+LinClassifyLength="5"
+LinScaleFast="0.5"
+LinScaleSlow="0.01"
+LinScaleTrans="5"
+LinMaxAngle="45"
+[End TrackSettings]
+
+[START MsdCurveFit]
+CutOffMode="Relative"
+FitStart="1"
+FitEnd="33"
+DiffModel="Free Diffusion"
+MaxIter="300"
+TolFun="-6"
+[End MsdCurveFit]
+
+[START ClusterSettings]
+SigSpat="50"
+TempWeight="0"
+SigTemp="300"
+CritScore="3"
+UseProbScore="0"
+Alpha="0.95"
+UseLocAlpha="0"
+BoxSpat="1000"
+BoxTemp="1000"
+[End ClusterSettings]
+
+[START MixedDistSettings]
+NumMix="2"
+UseInfoCrit="1"
+MaxMix="4"
+Replicates="5"
+MultipleMean="0"
+UseCorrMean="0"
+MaxIter="300"
+TolFun="-6"
+Display="Off"
+IsTruncated="0"
+LeftTrunc="-inf"
+RightTrunc="inf"
+Alpha="0.95"
+[End MixedDistSettings]
+
+[START Scalebar]
+Scale="1"
+Unit="µm"
+BarSize="4"
+Position="North-East"
+UseLabel="1"
+FontSize="36"
+Color="[1 1 1]"
+[End Scalebar]
+
+[START Timestamp]
+Unit="s"
+FontSize="36"
+Position="North-West"
+Color="[1 1 1]"
+UserIncrement="0"
+Increment="1"
+[End Timestamp]
+
+[START Textstamp]
+String="SLIMfast, AG Piehler, University Osnabrück"
+FontSize="18"
+Position="South-West"
+Color="[1 1 1]"
+[End Textstamp]

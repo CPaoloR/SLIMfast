@@ -1,0 +1,591 @@
+classdef ManagerRoi < SuperclassManager
+    %written by
+    %C.P.Richter
+    %Division of Biophysics / Group J.Piehler
+    %University of Osnabrueck
+    
+    properties (Hidden,Dependent)
+        Shape = 'Rectangle';
+        
+        RoiList
+        HasRoi
+        NumRoi
+        NameList
+        
+        FocusRoi
+        HighlightRoi
+        CropRoi
+    end %properties
+    properties (Hidden,Transient)
+        Name
+        
+        hFig = nan;
+        
+        hProfilePopup
+        hProfileSaveButton
+        
+        hMaskAx
+        hShapeEdit
+        hIdentifierEdit
+        hRoiList
+        
+        ShapeModel = {...
+            'Rectangle',...
+            'Ellipse',...
+            'Polygon',...
+            'Freehand'}
+    end %properties
+    
+    methods
+        %constructor
+        function this = ManagerRoi(parent)
+            if nargin == 0
+                parent = [];
+            end %if
+            this = this@SuperclassManager(parent);
+            
+            if nargin > 0
+                check_settings(this)
+            end %if
+        end %fun
+        function check_settings(this)
+        end %fun
+        
+        function construct_roi(this)
+            if ishandle(this.hFig)
+                delete(this.hFig)
+            end %if
+            
+            %initialize Roi
+            objRoi = ClassRoi(this);
+            objRoi.Name = this.Name;
+            
+            %activate images hittest function
+            set(this.Parent.hImage,  'HitTest', 'on')
+            %initialize roi
+            switch this.Shape
+                case 'Rectangle'
+                    fun = 'imrect';
+%                     objRoi.hRoi = imrect(this.Parent.hImageAx);
+                case 'Ellipse'
+                    fun = 'imellipse';
+%                     objRoi.hRoi = imellipse(this.Parent.hImageAx);
+                case 'Polygon'
+                    fun = 'impoly';
+%                     objRoi.hRoi = imellipse(this.Parent.hImageAx);
+                case 'Freehand'
+                    fun = 'imfreehand';
+%                     objRoi.hRoi = imfreehand(this.Parent.hImageAx);
+            end %switch
+            objRoi.hRoi = feval(str2func(fun),this.Parent.hImageAx);
+            
+            vertices = getPosition(objRoi.hRoi);
+            if strcmp(this.Shape,'Freehand')
+                if size(vertices,1) > 50
+                    %convert imfreehand to impoly for better handling & to save memory
+                    %to capture high curvature & to capture rough shape
+                    dr = sum(diff(vertices).^2,2)+rand(size(vertices,1)-1,1)*0.1;
+                    vertices = vertices([dr <= prctile(dr,10) | ...
+                        dr >= prctile(dr,90);true],:);
+                end %if
+                fun = 'impoly';
+                objRoi.Shape = 'Polygon';
+            else
+                objRoi.Shape = this.Shape;
+            end %if
+            
+            %image limits
+            imLim = [0 this.Parent.FieldOfView(5)*this.Parent.ActExp ...
+                0 this.Parent.FieldOfView(6)*this.Parent.ActExp]+0.5;
+            
+            %adjust points outside of the image
+            switch objRoi.Shape
+                case {'Rectangle', 'Ellipse'}
+                    x0 = max(imLim(1),vertices(1));
+                    %check if roi extents above image width
+                    if x0+vertices(3) > imLim(2)
+                        width = vertices(3)-(x0+vertices(3)-imLim(2));
+                    else
+                        width = vertices(3);
+                    end %if
+                    y0 = max(imLim(3),vertices(2));
+                    %check if roi extents above image height
+                    if y0+vertices(4) > imLim(4)
+                        height = vertices(4)-(y0+vertices(4)-imLim(4));
+                    else
+                        height = vertices(4);
+                    end %if
+                    vertices = [x0 y0 width height];
+                case 'Polygon'
+                    %vertices outside the image are shifted towards the
+                    %border
+                    vertices = [min(imLim(2),max(imLim(1),vertices(:,1))) ...
+                        min(imLim(4),max(imLim(3),vertices(:,2)))];
+            end %switch
+            
+            %update roi
+            delete(objRoi.hRoi)
+            objRoi.hRoi = feval(str2func(fun),this.Parent.hImageAx,vertices);
+            %             setVerticesDraggable(objRoi.hRoi,0)
+            fcn = makeConstrainToRectFcn(fun,imLim(1:2),imLim(3:4));
+            setPositionConstraintFcn(objRoi.hRoi,fcn);
+            objRoi.hRoiUpdateFcn = addNewPositionCallback(...
+                objRoi.hRoi,@objRoi.update_roilabel);
+            set(this.Parent.hImage,  'HitTest', 'off')
+            
+            setColor(objRoi.hRoi, objRoi.Typecolor)
+            objRoi.hPatch = ...
+                findobj(objRoi.hRoi,'Type','patch');
+            set(objRoi.hPatch, ...
+                'FaceColor', 'none',...
+                'UIContextmenu', construct_roi_contextmenu(objRoi))
+            
+            objRoi.VerticesRel = getPosition(objRoi.hRoi);
+            objRoi.VerticesAbs = roi_mag_to_orig(...
+                objRoi.VerticesRel,this.Parent.ActExp,objRoi.Shape);
+            
+            switch objRoi.Shape
+                case {'Rectangle', 'Ellipse'}
+                    objRoi.VerticesAbs(1:2) = [...
+                        objRoi.VerticesAbs(1)+(this.Parent.FieldOfView(1)-0.5) ...
+                        objRoi.VerticesAbs(2)+(this.Parent.FieldOfView(2)-0.5)];
+                    xCtr = objRoi.VerticesRel(1)+0.5*objRoi.VerticesRel(3);
+                    yCtr = objRoi.VerticesRel(2)+0.5*objRoi.VerticesRel(4);
+                case 'Polygon'
+                    objRoi.VerticesAbs = [...
+                        objRoi.VerticesAbs(:,1)+(this.Parent.FieldOfView(1)-0.5)...
+                        objRoi.VerticesAbs(:,2)+(this.Parent.FieldOfView(2)-0.5)];
+                    xCtr = mean(objRoi.VerticesRel(:,1));
+                    yCtr = mean(objRoi.VerticesRel(:,2));
+            end %switch
+            objRoi.hLabel = text(...
+                xCtr, yCtr,...
+                objRoi.Roilabel,...
+                'Parent', this.Parent.hImageAx,...
+                'FontSize', 12,...
+                'FontWeight', 'bold',...
+                'Color', [0 1 0],...
+                'HorizontalAlignment','center',...
+                'VerticalAlignment', 'middle',...
+                'HitTest', 'off');
+            
+            register_roi(this,objRoi)
+        end %fun
+        
+        function set_parameter(this)
+            %check if gui already open
+            if ishandle(this.hFig)
+                waitfor(msgbox('ROI MANAGER already open','INFO','help','modal'))
+                figure(this.hFig)
+                return
+            end %if
+            
+            y0 = 335;
+            
+            scrSize = get(0, 'ScreenSize');
+            this.hFig = ...
+                figure(...
+                'Units','pixels',...
+                'Position', [0.5*(scrSize(3)-225) 0.5*(scrSize(4)-y0) 225 y0],...
+                'Name', 'ROI MANAGER',...
+                'Color', this.FamilyColor,...
+                'NumberTitle', 'off',...
+                'MenuBar', 'none',...
+                'ToolBar', 'none',...
+                'DockControls', 'off',...
+                'IntegerHandle','off',...
+                'Resize', 'off',...
+                'CloseRequestFcn', @(src,evnt)close_object(this));
+            
+            y = y0 - 20;
+            
+            uicontrol(...
+                'Style', 'Text',...
+                'Units','pixels',...
+                'Position', [5 y 50 15],...
+                'FontSize', 8,...
+                'String', 'Profile:',...
+                'BackgroundColor', this.FamilyColor,...
+                'HorizontalAlignment', 'left');
+            
+            get_actual_profiles(this.SrcContainer)
+            this.hProfilePopup = ...
+                uicontrol(...
+                'Style', 'popupmenu',...
+                'Units','pixels',...
+                'Position', [60 y+1 115 15],...
+                'FontSize', 7,...
+                'String', this.SrcContainer.Profiles,...
+                'Value', find(strcmp(this.SrcContainer.Profile,this.SrcContainer.Profiles)),...
+                'BackgroundColor', [1 1 1],...
+                'Callback', @(src,evnt)set_Profile(this,src));
+            this.hProfileSaveButton = ...
+            uicontrol(...
+                'Style', 'pushbutton',...
+                'Units','pixels',...
+                'Position', [180 y 40 15],...
+                'FontSize', 8,...
+                'String', 'Save',...
+                'BackgroundColor', this.FamilyColor,...
+                'HorizontalAlignment', 'left',...
+                'Callback', @(src,evnt)save_actual_properties_as_profile(this.SrcContainer));
+            
+            y = y -20;
+            
+            uicontrol(...
+                'Style', 'Text',...
+                'Units','pixels',...
+                'Position', [5 y 80 15],...
+                'BackgroundColor', this.FamilyColor,...
+                'FontSize', 8,...
+                'FontUnits', 'normalized',...
+                'String', 'Name:',...
+                'HorizontalAlignment', 'left');
+            
+            this.Name = sprintf('Roi_%s',datestr(clock,'dd-mm-yy-HH-MM-SS'));
+            this.hIdentifierEdit = ...
+                uicontrol(...
+                'Style', 'edit',...
+                'Units','pixels',...
+                'Position', [85 y 135 15],...
+                'FontSize', 8,...
+                'FontUnits', 'normalized',...
+                'String', this.Name,...
+                'BackgroundColor', [1 1 1],...
+                'Callback', @(src,evnt)set_Name(this,src));
+            
+            y = y - 25;
+            
+            uicontrol(...
+                'Style', 'Text',...
+                'Units','pixels',...
+                'Position', [5 y+2 80 15],...
+                'BackgroundColor', this.FamilyColor,...
+                'FontSize', 8,...
+                'FontUnits', 'normalized',...
+                'String', 'Shape:',...
+                'HorizontalAlignment', 'left');
+            
+            this.hShapeEdit = ...
+                uicontrol(...
+                'Style', 'popupmenu',...
+                'Units', 'pixels',...
+                'Position', [85 y+2 135 15],...
+                'String', {'Rectangle', 'Ellipse',...
+                'Polygon', 'Freehand'},...
+                'Value', find(strcmp(this.Shape,this.ShapeModel)),...
+                'BackgroundColor', [1 1 1],...
+                'FontSize', 7,...
+                'FontUnits', 'normalized',...
+                'Callback', @(src,evnt)set_Shape(this,src));
+            
+            y = y - 70;
+            
+            this.hRoiList =...
+                uicontrol(...
+                'Parent', this.hFig,...
+                'Style', 'listbox',...
+                'Units', 'pixels',...
+                'Position', [5 y 215 60],...
+                'BackgroundColor', [1 1 1],...
+                'FontSize', 10,...
+                'FontUnits', 'normalized',...
+                'String', this.NameList,...
+                'Value',1);
+            
+            y = y - 130;
+            
+            axes(...
+                'Units','pixels',...
+                'OuterPosition', [0 y 220 130],...
+                'FontSize', 8,...
+                'FontUnits', 'normalized',...
+                'NextPlot', 'add',...
+                'XTickLabel','',...
+                'YTickLabel','',...
+                'Box','on',...
+                'LineWidth',2.5,...
+                'CreateFcn', @(src,evnt)show_roi_mask(this,src)) ;
+            
+            y = y + 10;
+            
+            uicontrol(...
+                'Style', 'checkbox',...
+                'Units','pixels',...
+                'Position', [5 y 170 15],...
+                'FontSize', 8,...
+                'BackgroundColor', this.FamilyColor,...
+                'String', 'Focus on Region of Interest',...
+                'Value', this.FocusRoi,...
+                'Callback', @(src,evnt)set_FocusRoi(this,src));
+            
+            y = y - 20;
+            
+            uicontrol(...
+                'Style', 'checkbox',...
+                'Units','pixels',...
+                'Position', [5 y 180 15],...
+                'FontSize', 8,...
+                'BackgroundColor', this.FamilyColor,...
+                'String', 'Show Region of Interest Border',...
+                'Value', this.HighlightRoi,...
+                'Callback', @(src,evnt)set_HighlightRoi(this,src));
+            
+            y = y - 20;
+            
+            uicontrol(...
+                'Style', 'checkbox',...
+                'Units','pixels',...
+                'Position', [5 y 220 15],...
+                'FontSize', 8,...
+                'BackgroundColor', this.FamilyColor,...
+                'String', 'Tailor to Region of Interest',...
+                'Value', this.CropRoi,...
+                'Callback', @(src,evnt)set_CropRoi(this,src));
+            
+            y = y - 35;
+            
+            uicontrol(...
+                'Style', 'pushbutton',...
+                'Units','pixels',...
+                'Position', [25 y 75 25],...
+                'BackgroundColor', this.FamilyColor,...
+                'FontSize', 8,...
+                'FontUnits', 'normalized',...
+                'String', 'Create',...
+                'Callback', @(src,evnt)construct_roi(this));
+            
+            uicontrol(...
+                'Style', 'pushbutton',...
+                'Units','pixels',...
+                'Position', [125 y 75 25],...
+                'BackgroundColor', this.FamilyColor,...
+                'FontSize', 8,...
+                'FontUnits', 'normalized',...
+                'String', 'Load',...
+                'Callback', @(src,evnt)load_roi(this));
+            
+            set(get(this.hFig,'Children'),...
+                'Units', 'normalized',...
+                'FontUnits', 'normalized',...
+                'FontWeight','bold')
+            set(this.hFig,'Units','pixels',...
+                'Position', set_figure_position(225/y0, 0.45/225*y0, 'center'))
+        end %fun
+        
+        %% getter
+        function shape = get.Shape(this)
+            shape = this.SrcContainer.Shape;
+        end %fun
+        function roilist = get.RoiList(this)
+            roilist = this.SrcContainer.RoiList;
+        end %fun
+        function hasroi = get.HasRoi(this)
+            if isempty(this.SrcContainer.RoiList)
+                hasroi = 0;
+            else
+                hasroi = 1;
+            end %if
+        end %fun
+        function numroi = get.NumRoi(this)
+            if isempty(this.SrcContainer.RoiList)
+                numroi = 0;
+            else
+                numroi = numel(this.SrcContainer.RoiList);
+            end %if
+        end %fun
+        function roiname = get.NameList(this)
+            if isempty(this.SrcContainer.RoiList)
+                roiname = [];
+            else
+                roiname = char(this.SrcContainer.RoiList.Name);
+            end %if
+        end %fun
+        function croproi = get.CropRoi(this)
+            croproi = this.SrcContainer.CropRoi;
+        end %fun
+        function highlightroi = get.HighlightRoi(this)
+            highlightroi = this.SrcContainer.HighlightRoi;
+        end %fun
+        function focusroi = get.FocusRoi(this)
+            focusroi = this.SrcContainer.FocusRoi;
+        end %fun
+        
+        %% setter
+        function set_Profile(this,src)
+            content = get(src,'String');
+            value = get(src,'Value');
+            
+            profile = content{value};
+            update_profile(this,profile)
+        end %fun
+        
+        function set_Name(this,src)
+            name = get(src,'String');
+            if isempty(name)
+                sprintf('Roi_%s',datestr(clock))
+            else
+                this.Name = name;
+            end %if
+        end %fun
+        function set_Shape(this,src)
+            content = get(src,'String');
+            value = get(src,'Value');
+            
+            this.SrcContainer.Shape = content{value};
+        end %fun
+        function set_CropRoi(this,src)
+            this.SrcContainer.CropRoi = get(src,'Value');
+        end %fun
+        
+        function set_HighlightRoi(this,src)
+            this.SrcContainer.HighlightRoi = get(src,'Value');
+            
+            if this.HighlightRoi
+                for roiIdx = 1:this.NumRoi
+                    set(this.RoiList(roiIdx).hRoi,...
+                        'Visible','on',...
+                        'Hittest','on')
+                    if this.RoiList(roiIdx).ShowLabel
+                        set(this.RoiList(roiIdx).hLabel,'Visible','on')
+                    end %if
+                end %for
+            else
+                for roiIdx = 1:this.NumRoi
+                    set(this.RoiList(roiIdx).hRoi,...
+                        'Visible','off',...
+                        'Hittest','off')
+                    set(this.RoiList(roiIdx).hLabel,'Visible','off')
+                end %for
+            end %if
+        end %fun
+        function set_FocusRoi(this,src)
+            this.SrcContainer.FocusRoi = get(src,'Value');
+            
+            display_frame(this.Parent)
+        end %fun
+        
+        %%
+        function update_profile(this,profile)
+            this.SrcContainer.Profile = profile;
+            switch profile
+                case 'None'
+                    set(this.hProfilePopup,'Value',...
+                        find(strcmp('None',this.SrcContainer.Profiles)))
+                case 'Standard'
+                    set_standard_properties(this.SrcContainer)
+                    check_settings(this)
+                    
+                    close_object(this)
+                    set_parameter(this)
+                otherwise
+                    SLIMfastPath = getappdata(0,'SLIMfastPath');
+                    filename = fullfile(SLIMfastPath, ...
+                        'Profiles', [this.SrcContainer.Profile '.txt']);
+                    load_settings_from_disc(this.SrcContainer,filename)
+                    check_settings(this)
+                    
+                    close_object(this)
+                    set_parameter(this)
+            end %switch
+        end %fun
+        
+        function load_roi(this)
+            [filename, pathname, isOK] = uigetfile(...
+                {'*.roi', 'ROI Object (.roi)'},...
+                'Select Roi', getappdata(0,'searchPath'));
+            if isOK
+                setappdata(0, 'searchPath', pathname)
+                roiObj = load([pathname filename], '-mat');
+                
+                roiObj.this.Parent = this;
+                roiObj.this.Name = filename(1:end-4);
+                
+                reconstruct_roi(roiObj.this)
+                register_roi(this,roiObj.this)
+                
+                waitfor(msgbox('Roi successfully loaded','modal'))
+            end %if
+        end %fun
+        function register_roi(this,objRoi)
+            %add reference to list
+            this.SrcContainer.RoiList = ...
+                [this.SrcContainer.RoiList; objRoi];
+            
+           display_frame(this.Parent)
+        end %fun
+        function delete_roi_reference(this,objRoi)
+            %remove reference to deleted roi
+            this.SrcContainer.RoiList(...
+                eq(this.SrcContainer.RoiList,objRoi)) = [];
+            
+            if isempty(this.SrcContainer.RoiList)
+                this.SrcContainer.RoiList = [];
+            end %if
+            
+            display_frame(this.Parent)
+        end %fun
+        function restore_roi(this)
+            for roiIdx = 1:this.NumRoi
+                if ishandle(this.SrcContainer.RoiList(roiIdx).hRoi)
+                    if isvalid(this.SrcContainer.RoiList(roiIdx).hRoi)
+                        adjust_position(this.SrcContainer.RoiList(roiIdx),...
+                            this.SrcContainer.RoiList(roiIdx).VerticesAbs)
+                    else
+                        reconstruct_roi(this.SrcContainer.RoiList(roiIdx))
+                    end %if
+                else
+                    reconstruct_roi(this.SrcContainer.RoiList(roiIdx))
+                end %if
+            end %for
+        end %fun
+        function update_roilist(this)
+            set(this.hRoiList,...
+                'String', this.NameList,...
+                'Value', 1)
+        end %fun
+        
+        function show_roi_mask(this,src)
+            maskdata = this.Parent.Maskdata;
+            hImage = imagesc('cdata',double(maskdata),...
+                'Parent',src);
+            colormap([0 0 0; 1 1 1])
+            axis image ij
+            
+            title(src,sprintf('Total Area = %.3f µm^2',...
+                bwarea(maskdata)*(this.Parent.Px2nm/1000/this.Parent.ActExp)^2))
+        end %fun
+        
+        %%
+        function saveObj = saveobj(this)
+            saveObj = saveobj@SuperclassManager(this);
+        end %fun
+        function close_object(this)
+            if ishandle(this.hFig)
+                delete(this.hFig)
+            end %if
+        end %fun
+        function delete_object(this)
+            if ishandle(this.hFig)
+                delete(this.hFig)
+            end %if
+            
+            delete_object@SuperclassManager(this)
+        end %fun
+    end %methods
+    
+    methods (Access = protected)
+        function cpObj = copyElement(this)
+            cpObj = copyElement@SuperclassManager(this);
+            
+            cpObj.hFig = nan;
+        end %fun
+    end %methods
+    methods (Static)
+        function this = loadobj(S)
+            this = ManagerRoi;
+            this = loadobj@SuperclassManager(this,S);
+            set_parent(this.SrcContainer.RoiList,this)
+        end %fun
+    end %methods
+end %classdef
